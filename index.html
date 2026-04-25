@@ -1,0 +1,1299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subnetting Calculator — FLSM & VLSM</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --bg4: #1f2d45;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --text: #e2e8f0;
+    --text2: #94a3b8;
+    --text3: #64748b;
+    --border: rgba(255,255,255,0.07);
+    --border2: rgba(0,212,255,0.25);
+    --danger: #ef4444;
+    --warn: #f59e0b;
+    --success: #10b981;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ── HEADER ── */
+  header {
+    padding: 40px 0 32px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  .header-inner {
+    display: flex;
+    align-items: flex-end;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+
+  .logo-mark {
+    width: 52px;
+    height: 52px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 18px;
+    color: #fff;
+    flex-shrink: 0;
+  }
+
+  .header-text h1 {
+    font-size: 28px;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), #a78bfa);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    line-height: 1.1;
+  }
+
+  .header-text p {
+    color: var(--text2);
+    font-size: 14px;
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .version-badge {
+    margin-left: auto;
+    padding: 6px 14px;
+    background: var(--bg3);
+    border: 1px solid var(--border2);
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--accent);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 32px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 6px;
+  }
+
+  .tab-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text2);
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    letter-spacing: 0.3px;
+  }
+
+  .tab-btn.active {
+    background: var(--bg4);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px var(--border2);
+  }
+
+  .tab-btn:hover:not(.active) {
+    background: var(--bg3);
+    color: var(--text);
+  }
+
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 28px;
+    margin-bottom: 20px;
+  }
+
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .card-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* ── FORM ELEMENTS ── */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+
+  .field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  input, select, textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+    padding: 11px 14px;
+    width: 100%;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+  }
+
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,255,0.1);
+  }
+
+  input.error { border-color: var(--danger); }
+
+  select option { background: var(--bg3); }
+
+  textarea { resize: vertical; min-height: 90px; }
+
+  .hint {
+    font-size: 11px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    margin-top: 2px;
+  }
+
+  /* ── BUTTONS ── */
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    padding: 12px 24px;
+    border-radius: var(--radius-sm);
+    border: none;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #0099cc);
+    color: #000;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0,212,255,0.3);
+  }
+
+  .btn-secondary {
+    background: var(--bg3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg4);
+    color: var(--text);
+    border-color: var(--border2);
+  }
+
+  .btn-danger {
+    background: rgba(239,68,68,0.15);
+    color: var(--danger);
+    border: 1px solid rgba(239,68,68,0.3);
+  }
+
+  .btn-danger:hover { background: rgba(239,68,68,0.25); }
+
+  /* ── ALERTS ── */
+  .alert {
+    padding: 12px 16px;
+    border-radius: var(--radius-sm);
+    font-size: 13px;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    line-height: 1.6;
+  }
+
+  .alert-error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+  .alert-success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.3); color: #6ee7b7; }
+  .alert-info { background: rgba(0,212,255,0.08); border: 1px solid rgba(0,212,255,0.2); color: var(--accent); }
+
+  /* ── RESULTS TABLE ── */
+  .result-section {
+    margin-top: 28px;
+    animation: fadeIn 0.3s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .result-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  .result-stats {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+
+  .stat-pill {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+  }
+
+  .stat-pill.blue { background: rgba(0,212,255,0.12); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+  .stat-pill.green { background: rgba(16,185,129,0.12); color: var(--success); border: 1px solid rgba(16,185,129,0.2); }
+  .stat-pill.amber { background: rgba(245,158,11,0.12); color: var(--warn); border: 1px solid rgba(245,158,11,0.2); }
+  .stat-pill.purple { background: rgba(124,58,237,0.12); color: #a78bfa; border: 1px solid rgba(124,58,237,0.2); }
+
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    min-width: 700px;
+  }
+
+  thead tr {
+    background: var(--bg3);
+  }
+
+  th {
+    padding: 12px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text3);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+
+  tbody tr {
+    border-bottom: 1px solid var(--border);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody tr:hover { background: var(--bg3); }
+
+  tbody tr:nth-child(even) { background: rgba(255,255,255,0.015); }
+  tbody tr:nth-child(even):hover { background: var(--bg3); }
+
+  td {
+    padding: 12px 14px;
+    color: var(--text);
+    white-space: nowrap;
+  }
+
+  td.network { color: var(--accent); font-weight: 500; }
+  td.broadcast { color: #f472b6; }
+  td.first-host { color: var(--success); }
+  td.last-host { color: var(--success); }
+  td.mask { color: #a78bfa; }
+  td.hosts { color: var(--warn); }
+  td.prefix { color: var(--accent2); font-weight: 700; }
+  td.label-col { color: var(--text2); font-style: italic; }
+
+  /* ── SUMMARY CARDS ── */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-top: 20px;
+  }
+
+  .summary-card {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    text-align: center;
+  }
+
+  .summary-card .val {
+    font-size: 22px;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 4px;
+  }
+
+  .summary-card .lbl {
+    font-size: 11px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+  }
+
+  .summary-card.blue .val { color: var(--accent); }
+  .summary-card.green .val { color: var(--success); }
+  .summary-card.amber .val { color: var(--warn); }
+  .summary-card.purple .val { color: #a78bfa; }
+  .summary-card.red .val { color: var(--danger); }
+
+  /* ── VISUAL MAP ── */
+  .visual-map {
+    margin-top: 20px;
+  }
+
+  .map-bar-wrap {
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    padding: 16px;
+  }
+
+  .map-title {
+    font-size: 12px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .map-bar {
+    display: flex;
+    height: 32px;
+    border-radius: 6px;
+    overflow: hidden;
+    gap: 1px;
+  }
+
+  .map-segment {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 500;
+    color: rgba(0,0,0,0.8);
+    transition: opacity 0.2s;
+    cursor: default;
+    min-width: 2px;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .map-segment:hover { opacity: 0.85; }
+
+  .map-free {
+    background: repeating-linear-gradient(
+      45deg,
+      rgba(255,255,255,0.04),
+      rgba(255,255,255,0.04) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+    border: 1px dashed rgba(255,255,255,0.1);
+    border-radius: 4px;
+    color: var(--text3) !important;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .map-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text2);
+  }
+
+  .legend-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── VLSM SUBNET ROWS ── */
+  .vlsm-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .vlsm-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .vlsm-row input { flex: 1; min-width: 120px; }
+
+  .vlsm-row .row-num {
+    font-size: 12px;
+    color: var(--text3);
+    font-family: 'JetBrains Mono', monospace;
+    min-width: 28px;
+    text-align: right;
+  }
+
+  .btn-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text2);
+    cursor: pointer;
+    font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    flex-shrink: 0;
+  }
+
+  .btn-icon:hover { background: var(--bg4); color: var(--text); }
+  .btn-icon.remove:hover { background: rgba(239,68,68,0.15); color: var(--danger); border-color: rgba(239,68,68,0.3); }
+
+  /* ── REFERENCE TABLE ── */
+  .ref-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+  }
+
+  .ref-table-wrap {
+    overflow-x: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+  }
+
+  .ref-table-wrap table { min-width: unset; }
+
+  /* ── COPY BUTTON ── */
+  .copy-btn {
+    padding: 6px 12px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text2);
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+
+  .copy-btn:hover { background: var(--bg4); color: var(--text); }
+  .copy-btn.copied { color: var(--success); border-color: rgba(16,185,129,0.3); }
+
+  /* ── FOOTER ── */
+  footer {
+    text-align: center;
+    padding: 40px 0 24px;
+    color: var(--text3);
+    font-size: 12px;
+    font-family: 'JetBrains Mono', monospace;
+    border-top: 1px solid var(--border);
+    margin-top: 40px;
+  }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 600px) {
+    header { padding: 24px 0 20px; }
+    .header-text h1 { font-size: 22px; }
+    .tabs { flex-direction: column; }
+    .tab-btn { text-align: left; }
+    .card { padding: 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <div class="header-inner">
+      <div class="logo-mark">IP</div>
+      <div class="header-text">
+        <h1>Subnetting Calculator</h1>
+        <p>FLSM &amp; VLSM — Full subnet analysis with visual map</p>
+      </div>
+      <div class="version-badge">v2.0</div>
+    </div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('flsm', this)">📐 FLSM</button>
+    <button class="tab-btn" onclick="switchTab('vlsm', this)">🧩 VLSM</button>
+    <button class="tab-btn" onclick="switchTab('reference', this)">📋 Reference</button>
+  </div>
+
+  <!-- ═══════════════ FLSM TAB ═══════════════ -->
+  <div id="tab-flsm" class="tab-content active">
+    <div class="card">
+      <div class="card-title">⚙ FLSM Configuration</div>
+
+      <div class="form-grid">
+        <div class="field">
+          <label>Network Address</label>
+          <input type="text" id="f-network" value="192.168.1.0" placeholder="e.g. 192.168.1.0">
+          <span class="hint">IPv4 network address</span>
+        </div>
+        <div class="field">
+          <label>CIDR Prefix</label>
+          <input type="number" id="f-cidr" value="24" min="1" max="30" placeholder="e.g. 24">
+          <span class="hint">Base prefix length (1–30)</span>
+        </div>
+        <div class="field">
+          <label>Number of Subnets Needed</label>
+          <input type="number" id="f-subnets" value="4" min="1" max="256" placeholder="e.g. 4">
+          <span class="hint">How many subnets required</span>
+        </div>
+        <div class="field">
+          <label>Hosts per Subnet Needed</label>
+          <input type="number" id="f-hosts" value="50" min="1" placeholder="e.g. 50">
+          <span class="hint">Minimum usable hosts each</span>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calcFLSM()">▶ Calculate FLSM</button>
+        <button class="btn btn-secondary" onclick="resetFLSM()">↺ Reset</button>
+      </div>
+    </div>
+
+    <div id="flsm-result"></div>
+  </div>
+
+  <!-- ═══════════════ VLSM TAB ═══════════════ -->
+  <div id="tab-vlsm" class="tab-content">
+    <div class="card">
+      <div class="card-title">⚙ VLSM Configuration</div>
+
+      <div class="form-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 24px;">
+        <div class="field">
+          <label>Network Address</label>
+          <input type="text" id="v-network" value="192.168.1.0" placeholder="e.g. 192.168.1.0">
+        </div>
+        <div class="field">
+          <label>CIDR Prefix</label>
+          <input type="number" id="v-cidr" value="24" min="1" max="30" placeholder="e.g. 24">
+        </div>
+      </div>
+
+      <div class="card-title">📋 Subnet Requirements</div>
+      <div class="hint" style="margin-bottom: 12px; color: var(--text2);">Add each subnet with a name and number of hosts needed. They will be automatically sorted largest → smallest.</div>
+
+      <div class="vlsm-rows" id="vlsm-rows">
+        <!-- rows injected by JS -->
+      </div>
+
+      <div class="btn-row" style="margin-bottom: 20px;">
+        <button class="btn btn-secondary" onclick="addVLSMRow()">+ Add Subnet</button>
+        <button class="btn btn-danger" onclick="clearVLSMRows()">✕ Clear All</button>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="calcVLSM()">▶ Calculate VLSM</button>
+        <button class="btn btn-secondary" onclick="resetVLSM()">↺ Reset</button>
+      </div>
+    </div>
+
+    <div id="vlsm-result"></div>
+  </div>
+
+  <!-- ═══════════════ REFERENCE TAB ═══════════════ -->
+  <div id="tab-reference" class="tab-content">
+    <div class="card">
+      <div class="card-title">📖 CIDR / Subnet Mask Quick Reference</div>
+      <div class="ref-grid">
+        <div>
+          <div class="ref-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>CIDR</th>
+                  <th>Subnet Mask</th>
+                  <th>Block</th>
+                  <th>Hosts</th>
+                </tr>
+              </thead>
+              <tbody id="ref-table-1"></tbody>
+            </table>
+          </div>
+        </div>
+        <div>
+          <div class="ref-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>CIDR</th>
+                  <th>Subnet Mask</th>
+                  <th>Block</th>
+                  <th>Hosts</th>
+                </tr>
+              </thead>
+              <tbody id="ref-table-2"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">🏷 IP Address Classes</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Class</th><th>First Octet Range</th><th>Default Mask</th><th>CIDR</th><th>Private Range</th><th>Max Hosts</th></tr>
+          </thead>
+          <tbody>
+            <tr><td class="prefix">A</td><td>1 – 126</td><td class="mask">255.0.0.0</td><td class="prefix">/8</td><td>10.0.0.0 – 10.255.255.255</td><td class="hosts">16,777,214</td></tr>
+            <tr><td class="prefix">B</td><td>128 – 191</td><td class="mask">255.255.0.0</td><td class="prefix">/16</td><td>172.16.0.0 – 172.31.255.255</td><td class="hosts">65,534</td></tr>
+            <tr><td class="prefix">C</td><td>192 – 223</td><td class="mask">255.255.255.0</td><td class="prefix">/24</td><td>192.168.0.0 – 192.168.255.255</td><td class="hosts">254</td></tr>
+            <tr><td class="prefix">D</td><td>224 – 239</td><td style="color:var(--text3)">Multicast</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td></tr>
+            <tr><td class="prefix">E</td><td>240 – 255</td><td style="color:var(--text3)">Reserved</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td><td style="color:var(--text3)">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="alert alert-info" style="margin-top: 14px;">
+        ℹ 127.x.x.x = Loopback (localhost) — excluded from Class A usable range
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Subnetting Calculator &nbsp;·&nbsp; FLSM &amp; VLSM &nbsp;·&nbsp; No dependencies, works offline
+  </footer>
+</div>
+
+<script>
+// ══════════════════════════════════════
+//  UTILITIES
+// ══════════════════════════════════════
+
+function ipToNum(ip) {
+  const parts = ip.trim().split('.');
+  if (parts.length !== 4) return NaN;
+  let n = 0;
+  for (const p of parts) {
+    const v = parseInt(p, 10);
+    if (isNaN(v) || v < 0 || v > 255) return NaN;
+    n = (n << 8) | v;
+  }
+  return n >>> 0;
+}
+
+function numToIp(n) {
+  n = n >>> 0;
+  return [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+}
+
+function maskFromPrefix(prefix) {
+  if (prefix === 0) return 0;
+  return (0xFFFFFFFF << (32 - prefix)) >>> 0;
+}
+
+function numToMask(n) { return numToIp(n); }
+
+function blockSize(prefix) { return Math.pow(2, 32 - prefix); }
+
+function hostsPerSubnet(prefix) { return blockSize(prefix) - 2; }
+
+function prefixForHosts(needed) {
+  // smallest prefix that gives >= needed usable hosts
+  for (let p = 30; p >= 1; p--) {
+    if (hostsPerSubnet(p) >= needed) return p;
+  }
+  return null;
+}
+
+function prefixForSubnets(basePfx, count) {
+  // smallest new prefix from basePfx that yields >= count subnets
+  for (let p = basePfx; p <= 30; p++) {
+    if (Math.pow(2, p - basePfx) >= count) return p;
+  }
+  return null;
+}
+
+function commaNum(n) { return n.toLocaleString(); }
+
+function isValidIp(ip) { return !isNaN(ipToNum(ip)); }
+
+function isNetworkAddr(ip, prefix) {
+  const n = ipToNum(ip);
+  const mask = maskFromPrefix(prefix);
+  return (n & ~mask) === 0;
+}
+
+// ══════════════════════════════════════
+//  COLOR PALETTE for subnets
+// ══════════════════════════════════════
+
+const COLORS = [
+  '#00d4ff','#7c3aed','#10b981','#f59e0b','#f472b6',
+  '#60a5fa','#34d399','#fb923c','#a78bfa','#4ade80',
+  '#fbbf24','#38bdf8','#e879f9','#2dd4bf','#fb7185'
+];
+
+// ══════════════════════════════════════
+//  RESULT RENDERERS
+// ══════════════════════════════════════
+
+function renderResult(containerID, html) {
+  document.getElementById(containerID).innerHTML = html;
+}
+
+function buildTable(rows, extraCols = []) {
+  const baseCols = [
+    { key: 'num',       label: '#',             cls: 'label-col' },
+    { key: 'label',     label: 'Name / Label',  cls: 'label-col' },
+    { key: 'prefix',    label: 'Prefix',        cls: 'prefix'    },
+    { key: 'mask',      label: 'Subnet Mask',   cls: 'mask'      },
+    { key: 'network',   label: 'Network Addr',  cls: 'network'   },
+    { key: 'firstHost', label: 'First Host',    cls: 'first-host'},
+    { key: 'lastHost',  label: 'Last Host',     cls: 'last-host' },
+    { key: 'broadcast', label: 'Broadcast',     cls: 'broadcast' },
+    { key: 'hosts',     label: 'Usable Hosts',  cls: 'hosts'     },
+    { key: 'block',     label: 'Block Size',    cls: ''          },
+  ];
+  const cols = [...baseCols, ...extraCols];
+
+  let html = `<div class="table-wrap"><table><thead><tr>`;
+  cols.forEach(c => { html += `<th>${c.label}</th>`; });
+  html += `</tr></thead><tbody>`;
+
+  rows.forEach(r => {
+    html += '<tr>';
+    cols.forEach(c => {
+      html += `<td class="${c.cls || ''}">${r[c.key] ?? ''}</td>`;
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  return html;
+}
+
+function buildVisualMap(subnets, baseNet, totalIPs) {
+  const totalUsed = subnets.reduce((s, sub) => s + sub.blockSize, 0);
+  const freeIPs = totalIPs - totalUsed;
+
+  let segsHtml = '';
+  subnets.forEach((sub, i) => {
+    const pct = (sub.blockSize / totalIPs) * 100;
+    const color = COLORS[i % COLORS.length];
+    const label = pct > 5 ? (sub.label || `S${i+1}`) : '';
+    segsHtml += `<div class="map-segment" style="flex:${pct};background:${color};" title="${sub.label || 'Subnet '+(i+1)}: ${sub.network} – ${sub.broadcast} (${commaNum(sub.blockSize)} addresses)">${label}</div>`;
+  });
+
+  if (freeIPs > 0) {
+    const pct = (freeIPs / totalIPs) * 100;
+    segsHtml += `<div class="map-segment map-free" style="flex:${pct};" title="Free: ${commaNum(freeIPs)} addresses">FREE</div>`;
+  }
+
+  let legendHtml = '';
+  subnets.forEach((sub, i) => {
+    const color = COLORS[i % COLORS.length];
+    legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:${color}"></div>${sub.label || 'Subnet '+(i+1)} (${numToIp(ipToNum(baseNet) + subnets.slice(0,i).reduce((s,x)=>s+x.blockSize,0))}/${sub.prefix})</div>`;
+  });
+  if (freeIPs > 0) {
+    legendHtml += `<div class="legend-item"><div class="legend-dot" style="background:repeating-linear-gradient(45deg,rgba(255,255,255,0.1),rgba(255,255,255,0.1) 2px,transparent 2px,transparent 4px);border:1px solid rgba(255,255,255,0.1)"></div>Free: ${commaNum(freeIPs)} addresses</div>`;
+  }
+
+  return `
+    <div class="visual-map">
+      <div class="map-bar-wrap">
+        <div class="map-title">Address space map (${numToIp(ipToNum(baseNet))} – ${numToIp(ipToNum(baseNet) + totalIPs - 1)})</div>
+        <div class="map-bar">${segsHtml}</div>
+        <div class="map-legend">${legendHtml}</div>
+      </div>
+    </div>`;
+}
+
+function buildSummary(cards) {
+  let html = '<div class="summary-grid">';
+  cards.forEach(c => {
+    html += `<div class="summary-card ${c.color}"><div class="val">${c.val}</div><div class="lbl">${c.lbl}</div></div>`;
+  });
+  html += '</div>';
+  return html;
+}
+
+function makeCopyBtn(text, id) {
+  return `<button class="copy-btn" id="cpbtn-${id}" onclick="copyText(\`${text.replace(/`/g,'\\`')}\`, 'cpbtn-${id}')">Copy CSV</button>`;
+}
+
+function copyText(text, btnId) {
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById(btnId);
+    btn.textContent = '✓ Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy CSV'; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ══════════════════════════════════════
+//  FLSM CALCULATOR
+// ══════════════════════════════════════
+
+function calcFLSM() {
+  const networkStr = document.getElementById('f-network').value.trim();
+  const cidr       = parseInt(document.getElementById('f-cidr').value);
+  const needSubs   = parseInt(document.getElementById('f-subnets').value);
+  const needHosts  = parseInt(document.getElementById('f-hosts').value);
+
+  // Validate
+  if (!isValidIp(networkStr)) return renderError('flsm-result', 'Invalid network address. Example: 192.168.1.0');
+  if (isNaN(cidr) || cidr < 1 || cidr > 30) return renderError('flsm-result', 'Prefix must be between 1 and 30.');
+  if (isNaN(needSubs) || needSubs < 1) return renderError('flsm-result', 'Number of subnets must be at least 1.');
+  if (isNaN(needHosts) || needHosts < 1) return renderError('flsm-result', 'Hosts needed must be at least 1.');
+
+  // Force to network address
+  const baseNum   = ipToNum(networkStr) & maskFromPrefix(cidr);
+  const baseNet   = numToIp(baseNum);
+  const totalIPs  = blockSize(cidr);
+
+  // Find prefix that satisfies BOTH subnet count AND host count
+  const pfxForH = prefixForHosts(needHosts);
+  const pfxForS = prefixForSubnets(cidr, needSubs);
+
+  if (pfxForH === null) return renderError('flsm-result', 'Host count too large. Maximum for /2 is ' + hostsPerSubnet(2) + ' hosts.');
+
+  // Take the stricter (larger number) prefix
+  const newPrefix = Math.max(pfxForH, pfxForS);
+
+  if (newPrefix > 30) return renderError('flsm-result', `Cannot fit ${needHosts} hosts and ${needSubs} subnets in /${cidr}. Try a smaller base prefix.`);
+
+  const subnetCount = Math.pow(2, newPrefix - cidr);
+  const block = blockSize(newPrefix);
+  const usable = hostsPerSubnet(newPrefix);
+  const totalUsableIPs = usable * subnetCount;
+  const totalAddresses = block * subnetCount;
+  const wastedHosts = (usable - needHosts) * needSubs;
+
+  // Build rows
+  const rows = [];
+  const subnets = [];
+  for (let i = 0; i < subnetCount; i++) {
+    const netNum = baseNum + i * block;
+    const bcNum  = netNum + block - 1;
+    const netIp  = numToIp(netNum);
+    const bcIp   = numToIp(bcNum);
+    const f      = numToIp(netNum + 1);
+    const l      = numToIp(bcNum - 1);
+    rows.push({
+      num: i + 1,
+      label: `Subnet ${i + 1}`,
+      prefix: `/${newPrefix}`,
+      mask: numToMask(maskFromPrefix(newPrefix)),
+      network: netIp,
+      firstHost: f,
+      lastHost: l,
+      broadcast: bcIp,
+      hosts: commaNum(usable),
+      block: commaNum(block),
+    });
+    subnets.push({ network: netIp, broadcast: bcIp, prefix: newPrefix, blockSize: block, label: `Subnet ${i+1}` });
+  }
+
+  // CSV
+  const csvRows = ['#,Name,Prefix,Subnet Mask,Network,First Host,Last Host,Broadcast,Usable Hosts,Block Size'];
+  rows.forEach(r => csvRows.push(`${r.num},${r.label},${r.prefix},${r.mask},${r.network},${r.firstHost},${r.lastHost},${r.broadcast},${r.hosts},${r.block}`));
+  const csv = csvRows.join('\n');
+
+  const html = `
+    <div class="result-section">
+      <div class="card">
+        <div class="result-header">
+          <div class="result-title">FLSM Results</div>
+          <div class="result-stats">
+            <span class="stat-pill blue">Base: ${baseNet}/${cidr}</span>
+            <span class="stat-pill purple">Chosen: /${newPrefix}</span>
+            <span class="stat-pill green">${commaNum(subnetCount)} subnets</span>
+            <span class="stat-pill amber">${commaNum(usable)} hosts each</span>
+            ${makeCopyBtn(csv, 'flsm')}
+          </div>
+        </div>
+
+        ${buildTable(rows)}
+
+        ${buildSummary([
+          { val: subnetCount, lbl: 'Total Subnets Possible', color: 'blue' },
+          { val: commaNum(usable), lbl: 'Usable Hosts / Subnet', color: 'green' },
+          { val: commaNum(totalIPs), lbl: 'Total Address Space', color: 'purple' },
+          { val: commaNum(wastedHosts), lbl: 'Hosts Wasted (vs needed)', color: 'red' },
+          { val: commaNum(block), lbl: 'Block Size', color: 'amber' },
+        ])}
+
+        ${buildVisualMap(subnets, baseNet, totalIPs)}
+
+        <div class="alert alert-info" style="margin-top:20px;">
+          ℹ FLSM uses /${newPrefix} for all ${subnetCount} subnets.
+          ${needSubs < subnetCount ? ` Only ${needSubs} are needed — ${subnetCount - needSubs} extra subnets available.` : ''}
+          Block size = ${block} · Borrowed bits = ${newPrefix - cidr}
+        </div>
+      </div>
+    </div>`;
+
+  renderResult('flsm-result', html);
+}
+
+function resetFLSM() {
+  document.getElementById('f-network').value = '192.168.1.0';
+  document.getElementById('f-cidr').value = '24';
+  document.getElementById('f-subnets').value = '4';
+  document.getElementById('f-hosts').value = '50';
+  renderResult('flsm-result', '');
+}
+
+// ══════════════════════════════════════
+//  VLSM CALCULATOR
+// ══════════════════════════════════════
+
+let vlsmRowCount = 0;
+
+function addVLSMRow(name = '', hosts = '') {
+  vlsmRowCount++;
+  const id = vlsmRowCount;
+  const row = document.createElement('div');
+  row.className = 'vlsm-row';
+  row.id = `vrow-${id}`;
+  row.innerHTML = `
+    <span class="row-num">#${id}</span>
+    <input type="text"   id="vname-${id}"  placeholder="Subnet name (e.g. Sales Dept)" value="${name}" style="flex:2">
+    <input type="number" id="vhosts-${id}" placeholder="Hosts needed" min="1" value="${hosts}" style="flex:1;min-width:100px">
+    <button class="btn-icon remove" onclick="removeVLSMRow(${id})" title="Remove">✕</button>`;
+  document.getElementById('vlsm-rows').appendChild(row);
+}
+
+function removeVLSMRow(id) {
+  const el = document.getElementById(`vrow-${id}`);
+  if (el) el.remove();
+}
+
+function clearVLSMRows() {
+  document.getElementById('vlsm-rows').innerHTML = '';
+  vlsmRowCount = 0;
+}
+
+function getVLSMRows() {
+  const rows = document.querySelectorAll('.vlsm-row');
+  const data = [];
+  rows.forEach(row => {
+    const id = row.id.replace('vrow-', '');
+    const name  = document.getElementById(`vname-${id}`)?.value.trim() || `Subnet ${id}`;
+    const hosts = parseInt(document.getElementById(`vhosts-${id}`)?.value);
+    if (!isNaN(hosts) && hosts > 0) data.push({ label: name, hosts });
+  });
+  return data;
+}
+
+function calcVLSM() {
+  const networkStr = document.getElementById('v-network').value.trim();
+  const cidr       = parseInt(document.getElementById('v-cidr').value);
+
+  if (!isValidIp(networkStr)) return renderError('vlsm-result', 'Invalid network address.');
+  if (isNaN(cidr) || cidr < 1 || cidr > 30) return renderError('vlsm-result', 'Prefix must be between 1 and 30.');
+
+  const rawData = getVLSMRows();
+  if (rawData.length === 0) return renderError('vlsm-result', 'Add at least one subnet requirement.');
+
+  // Sort largest → smallest
+  const sorted = [...rawData].sort((a, b) => b.hosts - a.hosts);
+
+  const baseNum  = ipToNum(networkStr) & maskFromPrefix(cidr);
+  const baseNet  = numToIp(baseNum);
+  const totalIPs = blockSize(cidr);
+
+  let ptr = baseNum;
+  const endNum = baseNum + totalIPs;
+
+  const rows = [];
+  const subnets = [];
+  let allocationOk = true;
+  let errorMsg = '';
+
+  sorted.forEach((sub, i) => {
+    const prefix = prefixForHosts(sub.hosts);
+
+    if (prefix === null) {
+      allocationOk = false;
+      errorMsg = `"${sub.label}" needs ${sub.hosts} hosts — too large for any single subnet.`;
+      return;
+    }
+
+    const block = blockSize(prefix);
+    // Align ptr to block boundary
+    if (ptr % block !== 0) {
+      ptr = (Math.floor(ptr / block) + 1) * block;
+    }
+
+    if (ptr + block > endNum) {
+      allocationOk = false;
+      errorMsg = `Not enough address space for "${sub.label}" (${sub.hosts} hosts needs /${prefix}, block ${block}). Consider a smaller base prefix.`;
+      return;
+    }
+
+    const netNum = ptr;
+    const bcNum  = netNum + block - 1;
+    const netIp  = numToIp(netNum);
+    const bcIp   = numToIp(bcNum);
+
+    rows.push({
+      num: i + 1,
+      label: sub.label,
+      prefix: `/${prefix}`,
+      mask: numToMask(maskFromPrefix(prefix)),
+      network: netIp,
+      firstHost: numToIp(netNum + 1),
+      lastHost: numToIp(bcNum - 1),
+      broadcast: bcIp,
+      hosts: commaNum(block - 2),
+      block: commaNum(block),
+      _orig: sub.hosts,
+    });
+
+    subnets.push({ network: netIp, broadcast: bcIp, prefix, blockSize: block, label: sub.label });
+    ptr = bcNum + 1;
+  });
+
+  if (!allocationOk) return renderError('vlsm-result', errorMsg);
+
+  const usedIPs  = ptr - baseNum;
+  const freeIPs  = endNum - ptr;
+  const freeNet  = freeIPs > 0 ? numToIp(ptr) : '—';
+
+  // CSV
+  const csvRows = ['#,Name,Hosts Needed,Prefix,Subnet Mask,Network,First Host,Last Host,Broadcast,Usable Hosts,Block Size'];
+  rows.forEach(r => csvRows.push(`${r.num},${r.label},${r._orig},${r.prefix},${r.mask},${r.network},${r.firstHost},${r.lastHost},${r.broadcast},${r.hosts},${r.block}`));
+  const csv = csvRows.join('\n');
+
+  const html = `
+    <div class="result-section">
+      <div class="card">
+        <div class="result-header">
+          <div class="result-title">VLSM Results</div>
+          <div class="result-stats">
+            <span class="stat-pill blue">Base: ${baseNet}/${cidr}</span>
+            <span class="stat-pill green">${rows.length} subnets</span>
+            <span class="stat-pill amber">Used: ${commaNum(usedIPs)} IPs</span>
+            <span class="stat-pill purple">Free: ${commaNum(freeIPs)} IPs</span>
+            ${makeCopyBtn(csv, 'vlsm')}
+          </div>
+        </div>
+
+        ${buildTable(rows)}
+
+        ${buildSummary([
+          { val: rows.length, lbl: 'Subnets Allocated', color: 'blue' },
+          { val: commaNum(usedIPs), lbl: 'IPs Used', color: 'amber' },
+          { val: commaNum(freeIPs), lbl: 'IPs Free', color: 'green' },
+          { val: commaNum(totalIPs), lbl: 'Total Address Space', color: 'purple' },
+          { val: freeNet, lbl: 'Free Starts At', color: 'amber' },
+        ])}
+
+        ${buildVisualMap(subnets, baseNet, totalIPs)}
+
+        <div class="alert alert-success" style="margin-top:20px;">
+          ✓ Subnets sorted largest → smallest per VLSM rules.
+          ${freeIPs > 0 ? ` ${commaNum(freeIPs)} addresses (${numToIp(ptr)} onwards) remain for future use.` : ' Full address space allocated.'}
+        </div>
+      </div>
+    </div>`;
+
+  renderResult('vlsm-result', html);
+}
+
+function resetVLSM() {
+  document.getElementById('v-network').value = '192.168.1.0';
+  document.getElementById('v-cidr').value = '24';
+  clearVLSMRows();
+  initVLSMDefaults();
+  renderResult('vlsm-result', '');
+}
+
+function initVLSMDefaults() {
+  addVLSMRow('Engineering Dept', '60');
+  addVLSMRow('Marketing Dept', '28');
+  addVLSMRow('Accounts Dept', '12');
+  addVLSMRow('WAN Link', '2');
+}
+
+// ══════════════════════════════════════
+//  ERROR HELPER
+// ══════════════════════════════════════
+
+function renderError(id, msg) {
+  document.getElementById(id).innerHTML = `
+    <div class="alert alert-error" style="margin-top:16px;">
+      ✕ ${msg}
+    </div>`;
+}
+
+// ══════════════════════════════════════
+//  TAB SWITCHING
+// ══════════════════════════════════════
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById(`tab-${name}`).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ══════════════════════════════════════
+//  REFERENCE TABLE BUILD
+// ══════════════════════════════════════
+
+function buildReferenceTable() {
+  const data = [];
+  for (let p = 8; p <= 30; p++) {
+    const mask = maskFromPrefix(p);
+    const block = blockSize(p);
+    const hosts = hostsPerSubnet(p);
+    data.push({ p, mask: numToMask(mask), block, hosts });
+  }
+
+  const half = Math.ceil(data.length / 2);
+  const fill = (tbodyId, items) => {
+    const tb = document.getElementById(tbodyId);
+    items.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td class="prefix">/${d.p}</td><td class="mask">${d.mask}</td><td>${d.block.toLocaleString()}</td><td class="hosts">${d.hosts.toLocaleString()}</td>`;
+      tb.appendChild(tr);
+    });
+  };
+  fill('ref-table-1', data.slice(0, half));
+  fill('ref-table-2', data.slice(half));
+}
+
+// ══════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════
+
+buildReferenceTable();
+initVLSMDefaults();
+</script>
+</body>
+</html>
